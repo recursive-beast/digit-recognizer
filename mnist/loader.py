@@ -32,14 +32,16 @@ def load(
     """
 
     with gzip.open("data/" + data_type + ".gz") as file:
+
         try:
+            while True:
 
-            entry = pickle.load(file)
+                entry = pickle.load(file)
 
-            if vectorize_results:
-                yield (entry[0], resultVector(entry[1]))
-            else:
-                yield entry
+                if vectorize_results:
+                    yield (entry[0], resultVector(entry[1]))
+                else:
+                    yield entry
 
         except EOFError:
             raise StopIteration
