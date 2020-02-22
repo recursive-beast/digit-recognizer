@@ -1,4 +1,4 @@
-from numpy import ndarray, exp
+from numpy import ndarray, exp, zeros
 from typing import Iterator, Any, Tuple
 
 
@@ -32,3 +32,13 @@ def signal_last(it: Iterator[Any]) -> Iterator[Tuple[bool, Any]]:
         ret_val = val
 
     yield True, ret_val
+
+
+def resultVector(digit: int) -> ndarray:
+    """
+    Return a (10,1) ndarray with all elements as 0.0,
+    except the one in the index that equals the provided digit
+    """
+    vector = zeros((10, 1))
+    vector[digit] = 1.0
+    return vector

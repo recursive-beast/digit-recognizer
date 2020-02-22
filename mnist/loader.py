@@ -1,17 +1,8 @@
 import gzip
 import pickle
 import numpy as np
+from helpers import resultVector
 from typing import Iterator, Tuple, Optional, Union
-
-
-def resultVector(digit: int) -> np.ndarray:
-    """
-    Return a (10,1) ndarray with all elements as 0.0,
-    except the one in the index that equals the provided digit
-    """
-    vector = np.zeros((10, 1))
-    vector[digit] = 1.0
-    return vector
 
 
 def load(
