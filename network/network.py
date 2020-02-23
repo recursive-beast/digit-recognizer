@@ -116,11 +116,11 @@ class Network(object):
         nabla_b[-1] = delta
         nabla_w[-1] = delta.dot(activations[-2].T)
 
-        # backpropagating the error to previous layers
+        # backpropagating the error to previous layers.
         for i in range(len(self.layers) - 2, 0, -1):
-            delta = self.weights[i + 1].T.dot(delta) * sigmoid_prime(zs[i])
-            nabla_b[-l] = delta
-            nabla_w[-l] = delta.dot(activations[i - 1].T)
+            delta = self.weights[i].T.dot(delta) * sigmoid_prime(zs[i - 1])
+            nabla_b[i - 1] = delta
+            nabla_w[i - 1] = delta.dot(activations[i - 1].T)
 
         return (nabla_b, nabla_w)
 
