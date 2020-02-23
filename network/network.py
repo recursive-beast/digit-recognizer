@@ -20,8 +20,9 @@ class Network(object):
         """
 
         self.layers = layers
-        self.biases = [np.random.randn(y, 1) for y in layers[1:]]
-        self.weights = [np.random.randn(y, x) for y, x in zip(layers[1:], layers[:-1])]
+        rng = np.random.default_rng()
+        self.biases = [rng.standard_normal((y, 1)) for y in layers[1:]]
+        self.weights = [rng.standard_normal((y, x)) for y, x in zip(layers[1:], layers[:-1])]
 
     def feedforward(self, a: np.ndarray) -> np.ndarray:
         """given ``a`` as input, Return the output of the network"""
