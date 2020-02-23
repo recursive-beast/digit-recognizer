@@ -1,6 +1,7 @@
 import numpy as np
-from typing import List, Iterator, Tuple
+from typing import List, Iterator, Tuple, Optional
 from helpers import sigmoid, sigmoid_prime, cost_derivative, signal_last
+from mnist.loader import Loader
 
 
 class Network(object):
@@ -30,11 +31,11 @@ class Network(object):
 
     def SGD(
         self,
-        training_data: Iterator[Tuple[np.ndarray, np.ndarray]],
+        training_data: Loader,
         epochs: int,
         mini_batch_size: int,
         learning_rate: float,
-        test_data: Iterator[Tuple[np.ndarray, int]] = None,
+        test_data: Optional[Loader] = None,
     ):
         """
         Train the neural network using stochastic gradient descent.
@@ -49,11 +50,12 @@ class Network(object):
 
         for j in range(epochs):
 
-            for is_last, entry in signal_last(training_data):
+            for is_last_entry, entry in signal_last(training_data):
 
                 mini_batch.append(entry)
 
-                if len(mini_batch) == mini_batch_size or is_last:
+                if len(mini_batch) == mini_batch_size or is_last_entry:
+
                     self.descend(mini_batch, learning_rate)
                     mini_batch.clear()
 
@@ -122,7 +124,7 @@ class Network(object):
 
         return (nabla_b, nabla_w)
 
-    def evaluate(self, test_data: Iterator[Tuple[np.ndarray, int]]) -> Tuple[int, int]:
+    def evaluate(self, test_data: Loader) -> Tuple[int, int]:
         """
         Return an (int,int) tuple where:
         

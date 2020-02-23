@@ -2,14 +2,13 @@ import gzip
 import pickle
 import numpy as np
 from helpers import resultVector
-from typing import Iterator, Tuple, Optional, Union
+from typing import Tuple, Optional, Union
 
 
-def load(
-    data_type: str, vectorize_results: Optional[bool] = False
-) -> Iterator[Tuple[np.ndarray, Union[np.ndarray, int]]]:
+class Loader:
+
     """
-    Return generator object that yields tuples with two entries :
+    A reusable Iterator that yields tuples with two entries when its ``.__next__()`` is called :
 
     1. The first entry is a (784,1) ndarray that represents an MNIST data set image.
         784 is the number of pixels in each image (28 * 28 pixels).
@@ -22,18 +21,26 @@ def load(
             it's the digit that corresponds to the input image.
     """
 
-    with gzip.open("data/" + data_type + ".gz") as file:
+    def __init__(self, gzip_location: str, vectorize_results: Optional[bool] = False):
+        self.file = gzip.open(gzip_location, "rb")
+        self.vectorize_results = vectorize_results
 
+    def __iter__(self):
+        return self
+
+    def __next__(self) -> Tuple[np.ndarray, Union[np.ndarray, int]]:
         try:
-            while True:
+            entry = pickle.load(self.file)
 
-                entry = pickle.load(file)
+            if self.vectorize_results:
+                return (entry[0], resultVector(entry[1]))
 
-                if vectorize_results:
-                    yield (entry[0], resultVector(entry[1]))
-                else:
-                    yield entry
+            return entry
 
         except EOFError:
-            raise StopIteration
+            self.file.seek(0)
+            raise StopIteration()
+
+    def __del__(self):
+        self.file.close()
 
