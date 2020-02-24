@@ -17,10 +17,10 @@ def cost_derivative(output: ndarray, expected: ndarray) -> ndarray:
     return output - expected
 
 
-def resultVector(digit: int) -> ndarray:
+def digitVector(digit: int) -> ndarray:
     """
-    Return a (10,1) ndarray with all elements as 0.0,
-    except the one in the index that equals the provided digit
+    Return a (10,1) ndarray with all elements as ``0.0``,
+    except the one in the index that equals the provided digit, which is set as ``1.0``
     """
     vector = zeros((10, 1))
     vector[digit] = 1.0

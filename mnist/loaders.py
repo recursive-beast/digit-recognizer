@@ -2,7 +2,7 @@ import gzip
 import pickle
 import numpy as np
 from random import shuffle
-from helpers import resultVector
+from helpers import digitVector
 from typing import Tuple, List
 
 
@@ -44,7 +44,7 @@ class MiniBatchLoader:
     def __init__(self, data: Loader, mini_batch_size: int):
         self.data = []
         for _input, digit in data:
-            self.data.append((_input, resultVector(digit)))
+            self.data.append((_input, digitVector(digit)))
 
         shuffle(self.data)
 
