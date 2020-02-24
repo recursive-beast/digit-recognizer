@@ -1,7 +1,8 @@
 import gzip
 import pickle
 import numpy as np
-from random import shuffle
+from random import Random
+from time import time
 from helpers import digitVector
 from typing import Tuple, List
 
@@ -37,33 +38,47 @@ class Loader:
 class MiniBatchLoader:
 
     """
-    A reusable Iterator that yields mini batches (lists) of tuples.
-    the tuples are extracted from the provided loader.
+    A reusable Iterator that yields mini batches as tuples ``(X,Y)``.
+
+    - ``X`` is a column stack where each column is representing a 28 * 28 image
+    - ``Y`` is a column stack where each column is representing the desired output for the corresponding ``X`` column
     """
 
     def __init__(self, data: Loader, mini_batch_size: int):
-        self.data = []
-        for _input, digit in data:
-            self.data.append((_input, digitVector(digit)))
+        self.X = []  # inputs
+        self.Y = []  # expected outputs
+        for x, y in data:
+            self.X.append(x)
+            self.Y.append(digitVector(y))
 
-        shuffle(self.data)
+        t = time()
+
+        self.rngX = Random(t)
+        self.rngY = Random(t)
+
+        self.shuffleData()
 
         self.mini_batch_size = mini_batch_size
         self.cursor = 0
 
+    def shuffleData(self):
+        self.rngX.shuffle(self.X)
+        self.rngY.shuffle(self.Y)
+
     def __iter__(self):
         return self
 
-    def __next__(self) -> List[Tuple[np.ndarray, np.ndarray]]:
+    def __next__(self) -> Tuple[np.ndarray, np.ndarray]:
         limit = self.cursor + self.mini_batch_size
 
-        if limit > len(self.data):
-            shuffle(self.data)
+        if limit > len(self.X):
+            self.shuffleData()
             self.cursor = 0
             raise StopIteration
 
-        mini_batch = self.data[self.cursor : limit]
+        mini_batch_X = np.column_stack((self.X[self.cursor : limit]))
+        mini_batch_Y = np.column_stack((self.Y[self.cursor : limit]))
 
         self.cursor = limit
 
-        return mini_batch
+        return (mini_batch_X, mini_batch_Y)

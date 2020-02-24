@@ -1,7 +1,7 @@
 import numpy as np
 from typing import List, Iterator, Tuple, Optional
 from helpers import sigmoid, sigmoid_prime, cost_derivative
-from mnist.loaders import Loader,MiniBatchLoader
+from mnist.loaders import Loader, MiniBatchLoader
 
 
 class Network(object):
@@ -22,7 +22,9 @@ class Network(object):
         self.layers = layers
         rng = np.random.default_rng()
         self.biases = [rng.standard_normal((y, 1)) for y in layers[1:]]
-        self.weights = [rng.standard_normal((y, x)) for y, x in zip(layers[1:], layers[:-1])]
+        self.weights = [
+            rng.standard_normal((y, x)) for y, x in zip(layers[1:], layers[:-1])
+        ]
 
     def feedforward(self, a: np.ndarray) -> np.ndarray:
         """given ``a`` as input, Return the output of the network"""
@@ -34,7 +36,6 @@ class Network(object):
         self,
         training_data: MiniBatchLoader,
         epochs: int,
-        mini_batch_size: int,
         learning_rate: float,
         test_data: Optional[Loader] = None,
     ):
@@ -50,8 +51,13 @@ class Network(object):
 
         for j in range(epochs):
 
-            for mini_batch in training_data:
-                self.descend(mini_batch, learning_rate)
+            for mini_batch_X, mini_batch_Y in training_data:
+                self.descend(
+                    mini_batch_X,
+                    mini_batch_Y,
+                    training_data.mini_batch_size,
+                    learning_rate,
+                )
 
             if test_data:
                 successful, total = self.evaluate(test_data)
@@ -59,61 +65,60 @@ class Network(object):
             else:
                 print(f"Epoch {j} complete")
 
-    def descend(self, batch: List[Tuple[np.ndarray, np.ndarray]], learning_rate: int):
+    def descend(
+        self, X: np.ndarray, Y: np.ndarray, mini_batch_size: int, learning_rate: float
+    ):
         """
         Update the network's weights and biases by applying gradient descent using backpropagation.
-        ``batch`` is a list of tuples ``(in, out)`` representing the training inputs and the desired
-        outputs.
+
+        - ``X`` is a column stack where each column is representing a 28 * 28 image
+        - ``Y`` is a column stack where each column is representing the desired output for the corresponding ``X`` column
         """
 
-        nabla_b = [np.zeros(b.shape) for b in self.biases]
-        nabla_w = [np.zeros(w.shape) for w in self.weights]
+        nabla_b, nabla_w = self.backpropagate(X, Y)
 
-        for _in, expected_out in batch:
-            delta_nabla_b, delta_nabla_w = self.backpropagate(_in, expected_out)
-            nabla_b = [nb + dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
-            nabla_w = [nw + dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
+        scale = learning_rate / mini_batch_size
 
-        self.weights = [
-            w - nw * (learning_rate / len(batch))
-            for w, nw in zip(self.weights, nabla_w)
-        ]
+        self.weights = [w - scale * nw for w, nw in zip(self.weights, nabla_w)]
 
-        self.biases = [
-            b - nb * (learning_rate / len(batch)) for b, nb in zip(self.biases, nabla_b)
-        ]
+        self.biases = [b - scale * nb for b, nb in zip(self.biases, nabla_b)]
 
     def backpropagate(
-        self, _in: np.ndarray, expected_out: np.ndarray
+        self, X: np.ndarray, Y: np.ndarray
     ) -> Tuple[List[np.ndarray], List[np.ndarray]]:
         """
-        Return a tuple ``(nabla_b, nabla_w)`` representing the
-        gradient for the cost function C_x.  ``nabla_b`` and
-        ``nabla_w`` are layer-by-layer lists of numpy ndarrays, similar
+        Return a tuple ``(nabla_b, nabla_w)`` representing the sum of the
+        gradient for the cost function over all training inputs in the provided mini_batch.
+        
+        ``nabla_b`` and ``nabla_w`` are layer-by-layer lists of numpy ndarrays, similar
         to ``self.biases`` and ``self.weights``.
         """
 
         nabla_b = [None] * len(self.biases)
         nabla_w = [None] * len(self.weights)
-        activation = _in
-        activations = [_in]  # list to store all the activations, layer by layer
-        zs = []  # list to store all the z vectors, layer by layer
+        activation = X
+        activations = [X]  # list to store all the activations, layer by layer
+        Zs = []  # list to store all the z vectors, layer by layer
 
         for b, w in zip(self.biases, self.weights):
-            z = w.dot(activation) + b
-            zs.append(z)
-            activation = sigmoid(z)
+            Z = w.dot(activation) + b
+            Zs.append(Z)
+            activation = sigmoid(Z)
             activations.append(activation)
 
         # calculating the error in the output layer
-        delta = cost_derivative(activations[-1], expected_out) * sigmoid_prime(zs[-1])
-        nabla_b[-1] = delta
+        delta = cost_derivative(activations[-1], Y) * sigmoid_prime(Zs[-1])
+
+        # summing over all training inputs in the mini batch
+        nabla_b[-1] = delta.sum(1, keepdims=True)
+
+        # because of matrix multiplication, there's no need to sum over training inputs
         nabla_w[-1] = delta.dot(activations[-2].T)
 
         # backpropagating the error to previous layers.
         for i in range(len(self.layers) - 2, 0, -1):
-            delta = self.weights[i].T.dot(delta) * sigmoid_prime(zs[i - 1])
-            nabla_b[i - 1] = delta
+            delta = self.weights[i].T.dot(delta) * sigmoid_prime(Zs[i - 1])
+            nabla_b[i - 1] = delta.sum(1, keepdims=True)
             nabla_w[i - 1] = delta.dot(activations[i - 1].T)
 
         return (nabla_b, nabla_w)
