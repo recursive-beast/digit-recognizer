@@ -1,7 +1,7 @@
 import numpy as np
 from typing import List, Iterator, Tuple, Optional
-from helpers import sigmoid, sigmoid_prime, cost_derivative, signal_last
-from mnist.loader import Loader
+from helpers import sigmoid, sigmoid_prime, cost_derivative
+from mnist.loaders import Loader,MiniBatchLoader
 
 
 class Network(object):
@@ -32,7 +32,7 @@ class Network(object):
 
     def SGD(
         self,
-        training_data: Loader,
+        training_data: MiniBatchLoader,
         epochs: int,
         mini_batch_size: int,
         learning_rate: float,
@@ -47,18 +47,11 @@ class Network(object):
         - If ``test_data`` is provided then the network will be evaluated against the test data after each epoch, and partial progress will be printed out.
         This is useful for tracking progress, but slows things down substantially.
         """
-        mini_batch = []
 
         for j in range(epochs):
 
-            for is_last_entry, entry in signal_last(training_data):
-
-                mini_batch.append(entry)
-
-                if len(mini_batch) == mini_batch_size or is_last_entry:
-
-                    self.descend(mini_batch, learning_rate)
-                    mini_batch.clear()
+            for mini_batch in training_data:
+                self.descend(mini_batch, learning_rate)
 
             if test_data:
                 successful, total = self.evaluate(test_data)
