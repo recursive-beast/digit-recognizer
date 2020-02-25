@@ -1,11 +1,12 @@
 import numpy as np
-from typing import List, Iterator, Tuple, Optional
-from helpers import sigmoid, sigmoid_prime, cost_derivative
+
+from helpers import cost_derivative, sigmoid, sigmoid_prime
 from mnist.loaders import Loader, MiniBatchLoader
+from typing import List, Optional, Tuple
 
 
 class Network(object):
-    def __init__(self, layers: List[int]):
+    def __init__(self, layers: List[int]) -> None:
         """
         The list ``layers`` contains the number of neurons in the
         respective layers of the network.
@@ -20,16 +21,21 @@ class Network(object):
         """
 
         self.layers = layers
+
         rng = np.random.default_rng()
+
         self.biases = [rng.standard_normal((y, 1)) for y in layers[1:]]
+
         self.weights = [
             rng.standard_normal((y, x)) for y, x in zip(layers[1:], layers[:-1])
         ]
 
     def feedforward(self, a: np.ndarray) -> np.ndarray:
         """given ``a`` as input, Return the output of the network"""
+
         for b, w in zip(self.biases, self.weights):
             a = sigmoid(w.dot(a) + b)
+
         return a
 
     def SGD(
@@ -38,12 +44,9 @@ class Network(object):
         epochs: int,
         learning_rate: float,
         test_data: Optional[Loader] = None,
-    ):
+    ) -> None:
         """
         Train the neural network using stochastic gradient descent.
-        
-        - ``training_data`` is an iterator over tuples ``(in, out)`` representing the training inputs and the desired
-        outputs.
         
         - If ``test_data`` is provided then the network will be evaluated against the test data after each epoch, and partial progress will be printed out.
         This is useful for tracking progress, but slows things down substantially.
@@ -51,13 +54,8 @@ class Network(object):
 
         for j in range(epochs):
 
-            for mini_batch_X, mini_batch_Y in training_data:
-                self.descend(
-                    mini_batch_X,
-                    mini_batch_Y,
-                    training_data.mini_batch_size,
-                    learning_rate,
-                )
+            for X, Y in training_data:
+                self.descend(X, Y, training_data.mini_batch_size, learning_rate)
 
             if test_data:
                 successful, total = self.evaluate(test_data)
@@ -67,7 +65,7 @@ class Network(object):
 
     def descend(
         self, X: np.ndarray, Y: np.ndarray, mini_batch_size: int, learning_rate: float
-    ):
+    ) -> None:
         """
         Update the network's weights and biases by applying gradient descent using backpropagation.
 
@@ -131,11 +129,11 @@ class Network(object):
         - the second entry is the total number of test inputs
         """
 
-        counter = 0
+        successful = 0
         total = 0
-        for _in, expected_out in test_data:
+        for x, y in test_data:
             total += 1
-            if self.feedforward(_in).argmax() == expected_out:
-                counter += 1
+            if self.feedforward(x).argmax() == y:
+                successful += 1
 
-        return (counter, total)
+        return (successful, total)

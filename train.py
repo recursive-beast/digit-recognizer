@@ -1,5 +1,5 @@
-from network.network import Network
 from mnist.loaders import Loader, MiniBatchLoader
+from network.network import Network
 
 learning_rate = 3.0
 mini_batch_size = 10
