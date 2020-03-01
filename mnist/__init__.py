@@ -31,7 +31,7 @@ class Loader:
     def __init__(self, gzip_location: str) -> None:
         self.file = gzip.open(gzip_location, "rb")
 
-    def __iter__(self) -> Loader:
+    def __iter__(self):
         return self
 
     def __next__(self) -> Tuple[np.ndarray, int]:
@@ -75,7 +75,7 @@ class MiniBatchLoader:
         self.rngX.shuffle(self.X)
         self.rngY.shuffle(self.Y)
 
-    def __iter__(self) -> MiniBatchLoader:
+    def __iter__(self):
         return self
 
     def __next__(self) -> Tuple[np.ndarray, np.ndarray]:
