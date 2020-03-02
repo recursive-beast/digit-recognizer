@@ -13,11 +13,13 @@ import numpy as np
 
 from helpers import cost_derivative, sigmoid, sigmoid_prime
 from mnist import Loader, MiniBatchLoader
+
 from typing import List, Optional, Tuple
+from cost_funcs.types import CostFunction
 
 
 class Network(object):
-    def __init__(self, layers: List[int]) -> None:
+    def __init__(self, layers: List[int], cost: CostFunction) -> None:
         """
         The list ``layers`` contains the number of neurons in the
         respective layers of the network.
@@ -32,6 +34,8 @@ class Network(object):
         """
 
         self.layers = layers
+
+        self.cost = cost
 
         rng = np.random.default_rng()
 
@@ -117,7 +121,7 @@ class Network(object):
             activations.append(activation)
 
         # calculating the error in the output layer
-        delta = cost_derivative(activations[-1], Y) * sigmoid_prime(Zs[-1])
+        delta = self.cost.delta(activations[-1], Y, Zs[-1])
 
         # summing over all training inputs in the mini batch
         nabla_b[-1] = delta.sum(1, keepdims=True)
