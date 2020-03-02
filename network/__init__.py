@@ -38,7 +38,8 @@ class Network(object):
         self.biases = [rng.standard_normal((y, 1)) for y in layers[1:]]
 
         self.weights = [
-            rng.standard_normal((y, x)) for y, x in zip(layers[1:], layers[:-1])
+            rng.standard_normal((y, x)) / np.sqrt(x)
+            for y, x in zip(layers[1:], layers[:-1])
         ]
 
     def feedforward(self, a: np.ndarray) -> np.ndarray:
