@@ -59,6 +59,7 @@ class Network(object):
         training_data: MiniBatchLoader,
         epochs: int,
         learning_rate: float,
+        lmbda: float,
         test_data: Optional[Loader] = None,
     ) -> None:
         """
@@ -68,10 +69,15 @@ class Network(object):
         This is useful for tracking progress, but slows things down substantially.
         """
 
+        mini_batch_size = training_data.mini_batch_size
+        training_data_size = len(training_data)
+
         for j in range(epochs):
 
             for X, Y in training_data:
-                self.descend(X, Y, training_data.mini_batch_size, learning_rate)
+                self.descend(
+                    X, Y, mini_batch_size, training_data_size, learning_rate, lmbda
+                )
 
             if test_data:
                 successful, total = self.evaluate(test_data)
@@ -80,7 +86,13 @@ class Network(object):
                 print(f"Epoch {j} complete")
 
     def descend(
-        self, X: np.ndarray, Y: np.ndarray, mini_batch_size: int, learning_rate: float
+        self,
+        X: np.ndarray,
+        Y: np.ndarray,
+        mini_batch_size: int,
+        training_data_size: int,
+        learning_rate: float,
+        lmbda: float,
     ) -> None:
         """
         Update the network's weights and biases by applying gradient descent using backpropagation.
@@ -92,8 +104,11 @@ class Network(object):
         nabla_b, nabla_w = self.backpropagate(X, Y)
 
         scale = learning_rate / mini_batch_size
+        weight_decay = 1 - learning_rate * (lmbda / training_data_size)
 
-        self.weights = [w - scale * nw for w, nw in zip(self.weights, nabla_w)]
+        self.weights = [
+            weight_decay * w - scale * nw for w, nw in zip(self.weights, nabla_w)
+        ]
 
         self.biases = [b - scale * nb for b, nb in zip(self.biases, nabla_b)]
 

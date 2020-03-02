@@ -78,6 +78,9 @@ class MiniBatchLoader:
     def __iter__(self):
         return self
 
+    def __len__(self):
+        return len(self.X)
+
     def __next__(self) -> Tuple[np.ndarray, np.ndarray]:
         limit = self.cursor + self.mini_batch_size
 
