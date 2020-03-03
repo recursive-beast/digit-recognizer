@@ -10,22 +10,23 @@ import gzip
 import numpy as np
 import pickle
 
-from random import Random
-from time import time
-from typing import List, Tuple
+from random import shuffle
+from typing import Tuple
 
 from helpers import unitVector
 
 
-class Loader:
+class LazyDataLoader:
 
     """
-    A reusable Iterator that yields tuples with two entries when its ``.__next__()`` is called :
+    A reusable Iterator that lasily yields tuples with two entries when its ``.__next__()`` is called :
 
     1. The first entry is a (784,1) ndarray that represents an MNIST data set image.
         784 is the number of pixels in each image (28 * 28 pixels).
         
     2. the second entry is the digit that corresponds to the input image.
+
+    the data is loaded lazily into memory.
     """
 
     def __init__(self, gzip_location: str) -> None:
@@ -45,53 +46,69 @@ class Loader:
         self.file.close()
 
 
-class MiniBatchLoader:
-
+class TrainingDataLoader:
     """
-    A reusable Iterator that yields mini batches as tuples ``(X,Y)``.
+    A reusable Iterator that yields tuples with two entries when its ``.__next__()`` is called :
 
-    - ``X`` is a column stack where each column is representing a 28 * 28 image
-    - ``Y`` is a column stack where each column is representing the desired output for the corresponding ``X`` column
+    1. The first entry is a (784,1) ndarray that represents an MNIST data set image.
+        784 is the number of pixels in each image (28 * 28 pixels).
+        
+    2. the second entry is a numpy unit vector that represents the desired output from the network.
+
+    the data is loaded eagerly into memory.
     """
 
-    def __init__(self, data: Loader, mini_batch_size: int) -> None:
-        self.X = []  # inputs
-        self.Y = []  # expected outputs
-        for x, y in data:
-            self.X.append(x)
-            self.Y.append(unitVector(y))
+    def __init__(self, gzip_location: str) -> None:
+        self.data = []
 
-        t = time()
+        for x, y in LazyDataLoader(gzip_location):
 
-        self.rngX = Random(t)
-        self.rngY = Random(t)
+            self.data.append((x, unitVector(y)))
 
-        self.shuffleData()
+        shuffle(self.data)
 
-        self.mini_batch_size = mini_batch_size
         self.cursor = 0
-
-    def shuffleData(self) -> None:
-        self.rngX.shuffle(self.X)
-        self.rngY.shuffle(self.Y)
 
     def __iter__(self):
         return self
 
     def __len__(self):
-        return len(self.X)
+        return len(self.data)
 
     def __next__(self) -> Tuple[np.ndarray, np.ndarray]:
-        limit = self.cursor + self.mini_batch_size
 
-        if limit > len(self.X):
-            self.shuffleData()
+        if self.cursor >= len(self.data):
+            shuffle(self.data)
             self.cursor = 0
             raise StopIteration
 
-        mini_batch_X = np.column_stack((self.X[self.cursor : limit]))
-        mini_batch_Y = np.column_stack((self.Y[self.cursor : limit]))
+        val = self.data[self.cursor]
 
-        self.cursor = limit
+        self.cursor += 1
 
-        return (mini_batch_X, mini_batch_Y)
+        return val
+
+
+def mini_batches(training_data: TrainingDataLoader, mini_batche_size: int):
+    """
+    get an iterator over mini batches from the provided training data loader
+    
+    the iterator yields tuples with two entries when its ``.__next__()`` is called :
+
+    - the first entry is a numpy column stack where each column is representing a 28 * 28 image
+    - the second entry is a numpy column stack where each column is representing the desired output for the corresponding first entry column
+    """
+
+    X = []
+    Y = []
+
+    for x, y in training_data:
+
+        X.append(x)
+        Y.append(y)
+
+        if len(X) == mini_batche_size:
+            yield (np.column_stack((X)), np.column_stack((Y)))
+            X = []
+            Y = []
+

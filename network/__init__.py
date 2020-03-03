@@ -12,10 +12,10 @@ Gradients are calculated using backpropagation.
 import numpy as np
 
 from helpers import cost_derivative, sigmoid, sigmoid_prime
-from mnist import Loader, MiniBatchLoader
+from mnist import LazyDataLoader, TrainingDataLoader, mini_batches
 
-from typing import List, Optional, Tuple
 from cost_funcs.types import CostFunction
+from typing import List, Optional, Tuple
 
 
 class Network(object):
@@ -56,11 +56,12 @@ class Network(object):
 
     def SGD(
         self,
-        training_data: MiniBatchLoader,
+        training_data_location: str,
         epochs: int,
+        mini_batch_size: int,
         learning_rate: float,
         lmbda: float,
-        test_data: Optional[Loader] = None,
+        test_data_location: Optional[str] = None,
     ) -> None:
         """
         Train the neural network using stochastic gradient descent.
@@ -69,12 +70,14 @@ class Network(object):
         This is useful for tracking progress, but slows things down substantially.
         """
 
-        mini_batch_size = training_data.mini_batch_size
+        training_data = TrainingDataLoader(training_data_location)
+        test_data = LazyDataLoader(test_data_location)
+
         training_data_size = len(training_data)
 
         for j in range(epochs):
 
-            for X, Y in training_data:
+            for X, Y in mini_batches(training_data, mini_batch_size):
                 self.descend(
                     X, Y, mini_batch_size, training_data_size, learning_rate, lmbda
                 )
@@ -152,7 +155,7 @@ class Network(object):
 
         return (nabla_b, nabla_w)
 
-    def evaluate(self, test_data: Loader) -> Tuple[int, int]:
+    def evaluate(self, test_data: LazyDataLoader) -> Tuple[int, int]:
         """
         Return an (int,int) tuple where:
         

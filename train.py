@@ -1,16 +1,20 @@
-from mnist import Loader, MiniBatchLoader
 from network import Network
 from cost_funcs import QuadraticCost
 
-mini_batch_size = 10
 epochs = 30
-learning_rate = 0.5
+mini_batch_size = 10
+learning_rate = 0.25
 lmbda = 5.0
 
-training = MiniBatchLoader(Loader("mnist/data/training.gz"), mini_batch_size)
-testing = Loader("mnist/data/testing.gz")
 cost = QuadraticCost()
 
 net = Network([784, 30, 10], cost)
 
-net.SGD(training, epochs, learning_rate, lmbda, testing)
+net.SGD(
+    "mnist/data/training.gz",
+    epochs,
+    mini_batch_size,
+    learning_rate,
+    lmbda,
+    "mnist/data/testing.gz",
+)
