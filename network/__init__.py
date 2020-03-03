@@ -11,7 +11,7 @@ Gradients are calculated using backpropagation.
 
 import numpy as np
 
-from helpers import cost_derivative, sigmoid, sigmoid_prime
+from helpers import sigmoid, sigmoid_prime
 from mnist import LazyDataLoader, TrainingDataLoader, mini_batches
 
 from cost_funcs.types import CostFunction

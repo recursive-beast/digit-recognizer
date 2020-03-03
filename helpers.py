@@ -12,11 +12,6 @@ def sigmoid_prime(z: np.ndarray) -> np.ndarray:
     return y * (1 - y)
 
 
-def cost_derivative(a: np.ndarray, y: np.ndarray) -> np.ndarray:
-    """Return the vector of the cost function's partial derivatives in respect to the output ``a``"""
-    return a - y
-
-
 def unitVector(i: int) -> np.ndarray:
     """
     Return a (10,1) ndarray with all elements as ``0.0``, except in the ``i``th index where the value is ``1.0``.
