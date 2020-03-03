@@ -11,11 +11,13 @@ Gradients are calculated using backpropagation.
 
 import numpy as np
 
-from helpers import sigmoid, sigmoid_prime
+from helpers import sigmoid, sigmoid_prime, unitVector
 from mnist import LazyDataLoader, TrainingDataLoader, mini_batches
 
 from cost_funcs.types import CostFunction
-from typing import List, Optional, Tuple
+from typing import Iterator, List, Optional, Tuple, Union
+
+Loader = Iterator[Tuple[np.ndarray, Union[np.ndarray, int]]]
 
 
 class Network(object):
@@ -61,19 +63,29 @@ class Network(object):
         mini_batch_size: int,
         learning_rate: float,
         lmbda: float,
-        test_data_location: Optional[str] = None,
-    ) -> None:
+        evaluation_data_location: str = None,
+        monitor_evaluation_accuracy: bool = False,
+        monitor_evaluation_cost: bool = False,
+        monitor_training_accuracy: bool = False,
+        monitor_training_cost: bool = False,
+    ) -> Tuple[List[float], List[float], List[float], List[float]]:
         """
-        Train the neural network using stochastic gradient descent.
-        
-        - If ``test_data`` is provided then the network will be evaluated against the test data after each epoch, and partial progress will be printed out.
+        Train the neural network using stochastic gradient descent and L2 regularization .
+
+        the cost and accuracy on either the evaluation data or the training data can be monitored by setting the appropriate flags .
+
+        The method returns a tuple containing four lists containing the accuracy and cost monitored for each epoch .
+
         This is useful for tracking progress, but slows things down substantially.
         """
 
         training_data = TrainingDataLoader(training_data_location)
-        test_data = LazyDataLoader(test_data_location)
+        evaluation_data = LazyDataLoader(evaluation_data_location)
 
         training_data_size = len(training_data)
+
+        training_accuracy, training_cost = [], []
+        evaluation_accuracy, evaluation_cost = [], []
 
         for j in range(epochs):
 
@@ -82,11 +94,34 @@ class Network(object):
                     X, Y, mini_batch_size, training_data_size, learning_rate, lmbda
                 )
 
-            if test_data:
-                successful, total = self.evaluate(test_data)
-                print(f"Epoch {j}: {successful} / {total}")
-            else:
-                print(f"Epoch {j} complete")
+            print(f"\nEpoch {j} complete -----------\n")
+
+            if monitor_evaluation_accuracy:
+                successful, total = self.accuracy(evaluation_data)
+                evaluation_accuracy.append(successful / total)
+                print(f"Accuracy on evaluation data: {successful} / {total}")
+
+            if monitor_evaluation_cost:
+                total_cost = self.total_cost(evaluation_data, lmbda)
+                evaluation_cost.append(total_cost)
+                print(f"Cost on evaluation data: {total_cost}")
+
+            if monitor_training_accuracy:
+                successful, total = self.accuracy(training_data)
+                training_accuracy.append(successful / total)
+                print(f"Accuracy on training data: {successful} / {total}")
+
+            if monitor_training_cost:
+                total_cost = self.total_cost(training_data, lmbda)
+                training_cost.append(total_cost)
+                print(f"Cost on training data: {total_cost}")
+
+        return (
+            evaluation_accuracy,
+            evaluation_cost,
+            training_accuracy,
+            training_cost,
+        )
 
     def descend(
         self,
@@ -155,7 +190,7 @@ class Network(object):
 
         return (nabla_b, nabla_w)
 
-    def evaluate(self, test_data: LazyDataLoader) -> Tuple[int, int]:
+    def accuracy(self, data: Loader) -> Tuple[int, int]:
         """
         Return an (int,int) tuple where:
         
@@ -165,9 +200,32 @@ class Network(object):
 
         successful = 0
         total = 0
-        for x, y in test_data:
+        for x, y in data:
             total += 1
+
+            if type(y) == np.ndarray:
+                y = y.argmax()
+
             if self.feedforward(x).argmax() == y:
                 successful += 1
 
         return (successful, total)
+
+    def total_cost(self, data: Loader, lmbda: float):
+        """Return the total cost for the data set ``data``"""
+
+        total_cost = 0.0
+        data_size = 0
+
+        for x, y in data:
+            data_size += 1
+            a = self.feedforward(x)
+
+            if type(y) == int:
+                y = unitVector(y)
+
+            total_cost += self.cost(a, y)
+
+        total_cost += 0.5 * lmbda * sum(np.linalg.norm(w) ** 2 for w in self.weights)
+
+        return total_cost / data_size
