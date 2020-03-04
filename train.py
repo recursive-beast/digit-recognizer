@@ -1,6 +1,6 @@
 from network import Network
 from cost_funcs import QuadraticCost
-import matplotlib.pyplot as plt
+from matplotlib import gridspec, pyplot
 
 epochs = 30
 mini_batch_size = 10
@@ -26,25 +26,40 @@ ea, ec, ta, tc = net.SGD(
 
 x = list(range(epochs))
 
-fig, (ax1, ax2) = plt.subplots(2, 1, True)
+gs = gridspec.GridSpec(3, 2)
+
+pyplot.figure()
 
 # ----------------------------
-ax1.plot(x, ea, label="evaluation accuracy")
-ax1.plot(x, ta, label="training accuracy")
+acc_plot = pyplot.subplot(gs[0, :]).set_xticklabels([])
 
-ax1.set_xlabel("epochs")
-ax1.set_ylabel("accuracy")
+pyplot.plot(x, ea, label="evaluation accuracy")
+pyplot.plot(x, ta, label="training accuracy")
 
-ax1.legend()
-# ----------------------------
-ax2.plot(x, ec, label="evaluation cost")
-ax2.plot(x, tc, label="training cost")
+pyplot.ylabel("accuracy")
 
-ax2.set_xlabel("epochs")
-ax2.set_ylabel("total cost")
+pyplot.legend()
 
-ax2.legend()
 # ----------------------------
 
-plt.show()
-plt.close()
+pyplot.subplot(gs[1, :]).set_xticklabels([])
+
+pyplot.plot(x, ec, label="evaluation cost")
+
+pyplot.ylabel("cost")
+
+pyplot.legend()
+# ----------------------------
+
+pyplot.subplot(gs[2, :])
+
+pyplot.plot(x, tc, label="training cost")
+
+pyplot.xlabel("epochs")
+pyplot.ylabel("cost")
+
+pyplot.legend()
+# ----------------------------
+
+pyplot.show()
+pyplot.close()
