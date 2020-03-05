@@ -1,15 +1,15 @@
 from network import Network
-from cost_funcs import QuadraticCost
+from cost_funcs import CrossEntropyCost
 from matplotlib import gridspec, pyplot
 
-epochs = 30
+epochs = 60
 mini_batch_size = 10
-learning_rate = 0.25
+learning_rate = 0.1
 lmbda = 5.0
 
-cost = QuadraticCost()
+cost = CrossEntropyCost()
 
-net = Network([784, 30, 10], cost)
+net = Network([784, 100, 10], cost)
 
 ea, ec, ta, tc = net.SGD(
     "mnist/data/training.gz",
