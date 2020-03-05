@@ -98,7 +98,7 @@ class Network(object):
 
             if monitor_evaluation_accuracy:
                 successful, total = self.accuracy(evaluation_data)
-                evaluation_accuracy.append(successful / total)
+                evaluation_accuracy.append(successful / total * 100)
                 print(f"Accuracy on evaluation data: {successful} / {total}")
 
             if monitor_evaluation_cost:
@@ -108,7 +108,7 @@ class Network(object):
 
             if monitor_training_accuracy:
                 successful, total = self.accuracy(training_data)
-                training_accuracy.append(successful / total)
+                training_accuracy.append(successful / total * 100)
                 print(f"Accuracy on training data: {successful} / {total}")
 
             if monitor_training_cost:
