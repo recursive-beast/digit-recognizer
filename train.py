@@ -1,6 +1,8 @@
-from network import Network
 from cost_funcs import CrossEntropyCost
+from network import Network
+
 from matplotlib import gridspec, pyplot
+import pickle
 
 epochs = 60
 mini_batch_size = 10
@@ -23,6 +25,9 @@ ea, ec, ta, tc = net.SGD(
     True,
     True,
 )
+
+with open("progress_data.pkl", "wb") as f:
+    pickle.dump((ea, ec, ta, tc), f)
 
 x = list(range(epochs))
 
