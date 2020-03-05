@@ -24,7 +24,7 @@ class QuadraticCost(CostFunction):
 
 
 class CrossEntropyCost(CostFunction):
-    """A class that represents the quadratic cost function"""
+    """A class that represents the cross entropy cost function"""
 
     def __call__(self, a: np.ndarray, y: np.ndarray) -> float:
         """Return the cost associated with an output ``a`` and desired output ``y``"""
